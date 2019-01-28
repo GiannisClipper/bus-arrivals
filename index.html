@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>test_oasa_api</title>
+  <style>
+    body {
+      font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 0.85em;
+    }
+    .arrival {
+      font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    function getLines() {        
+      fetch('http://localhost:5000/api/buses?act=webGetLines')
+      .then(res=> res.json())
+      .then(lines=> {
+        let $ul=document.createElement('ul');
+        document.body.appendChild($ul);
+        lines.map(line=> {
+          let $li=document.createElement('li');
+          $ul.appendChild($li);
+          $li.className='line';
+          $li.textContent=`${line['LineID']}: ${line['LineDescr']} (${line['LineCode']})`;
+          $li.dataset.LineID=line['LineID'];
+          $li.dataset.LineCode=line['LineCode'];
+          //$li.dataset.LineDescr=line['LineDescr'];
+          $li.addEventListener("click", e=> {
+            e.stopPropagation();
+            webGetRoutes(e.target);
+          });
+        });
+      })
+      .catch(err=> alert(err.message));
+    }
+
+    function webGetRoutes(parent) {
+      if (parent.children.length>0) {
+        parent.children[0].remove();
+        return;
+      }
+
+      fetch(`http://localhost:5000/api/buses?act=webGetRoutes&p1=${parent.dataset.LineCode}`)
+      .then(res=> res.json())
+      .then(routes=> {
+        let $ul=document.createElement('ul');
+        parent.appendChild($ul);
+        routes.map(route=> {
+          let $li=document.createElement('li');
+          $ul.appendChild($li);
+          $li.className='route';
+          $li.textContent=`${parent.dataset.LineID}: ${route['RouteDescr']} (${route['RouteCode']})`;
+          //$li.dataset.Line=parent;
+          $li.dataset.RouteCode=route['RouteCode'];
+          //$li.dataset.RouteDescr=route['RouteDescr'];
+          $li.addEventListener("click", e=> {
+            e.stopPropagation();
+            webGetStops(e.target);
+          });
+        });
+      })
+      .catch(err=> alert(err.message));
+    }
+
+    function webGetStops(parent) {
+      if (parent.children.length>0) {
+        parent.children[0].remove();
+        return;
+      }
+
+      fetch(`http://localhost:5000/api/buses?act=webGetStops&p1=${parent.dataset.RouteCode}`)
+      .then(res=> res.json())
+      .then(stops=> {
+        let $ul=document.createElement('ul');
+        parent.appendChild($ul);
+        stops.map(stop=> {
+          let $li=document.createElement('li');
+          $ul.appendChild($li);
+          $li.className='stop';
+          $li.textContent=`${stop['StopDescr']} (${stop['StopCode']})`;
+          //$li.dataset.Route=parent;
+          $li.dataset.StopCode=stop['StopCode'];
+          //$li.dataset.StopDescr=stop['StopDescr'];
+          $li.addEventListener("click", e=> {
+            e.stopPropagation();
+            getStopArrivals(e.target);
+          });
+        });
+      })
+      .catch(err=> alert(err.message));
+    }
+
+    function getStopArrivals(parent) {
+      if (parent.children.length>0) {
+        parent.children[0].remove();
+        return;
+      }
+
+      fetch(`http://localhost:5000/api/buses?act=getStopArrivals&p1=${parent.dataset.StopCode}`)
+      .then(res=> res.json())
+      .then(arrivals=> {
+        let $ul=document.createElement('ul');
+        parent.appendChild($ul);
+        if (arrivals) {
+          fetch(`http://localhost:5000/api/buses?act=webRoutesForStop&p1=${parent.dataset.StopCode}`)
+          .then(res=> res.json())
+          .then(routes=> {
+            arrivals.map(arrival=> {
+              let $li=document.createElement('li');
+              $ul.appendChild($li);
+              $li.className='arrival';
+              let route=routes.filter(x=> x['RouteCode']===arrival['route_code']);
+              let LineID=route[0]['LineID'];
+              let RouteDescr=route[0]['RouteDescr'];
+              $li.textContent=`${LineID}: ${RouteDescr}: ${arrival['btime2']}'`;
+            });
+          });
+        } else {
+          let $li=document.createElement('li');
+          $ul.appendChild($li);
+          $li.className='arrival';
+          $li.textContent=`(no arrivals)`;
+        }
+      })
+      .catch(err=> alert(err.message));
+    }
+
+    document.addEventListener("DOMContentLoaded", getLines);
+  </script>
+</body>
+</html>
