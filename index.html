@@ -6,23 +6,66 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>test_oasa_api</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      white-space:nowrap;
+    }
+
     body {
       font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
       font-size: 0.85em;
+      color: darkred;
     }
+    body > footer {
+      position: -webkit-sticky; /* Safari */
+      position: sticky;
+      bottom: 0;
+      background: yellowgreen;
+      margin-top: 1px;
+      padding: 1.25em 0 1.25em 0;
+      font-size:1em;
+      font-weight:300;
+      text-align: center;
+    }
+
+    body > footer > .info {
+      padding: .75em 0 0 0;
+      font-size: .9em;
+    }
+
+    h1 {
+      display: inline;
+      font-size: 1em;
+    }
+
+    a {
+      text-decoration:none;
+    }
+    a:link, a:visited {
+      color:darkred;
+    }
+    body footer .menu a {
+      border:1px solid darkred;
+      border-radius:50%;
+      padding:.2em .5em .2em .5em;
+      margin:0.2em;
+    }
+
     ul {
       list-style-type: none;
-      padding: 1em 0 1em 0;
     }
     li {
-      background: khaki;
+      background: lightsteelblue;
       margin-top: 1px;
       margin-bottom: 1px;
       padding: .25em 0 .25em 0;
     }
+
     .left {
       display: inline-block;
       vertical-align: top;
+
     }
     .right {
       display: inline-block;
@@ -30,175 +73,63 @@
       padding: 1.5em 0 0 0;
     }
 
+    .line ul, .route ul, .stop ul {
+      padding: 1em 0 1em 0;
+    }
+
+    li {
+      cursor: pointer;
+    }
+
+    .route .right, .stop .right {
+      padding: .75em 0 0 0;
+    }
+
     .line .icon {
       width:64px;
       height:58px;
     }
-    .route .right {
-      padding: .75em 0 0 0;
-    }
-    .route .icon {
+
+    .route .icon, .stop .icon {
       width:32px;
       height:29px;
     }
+
     .arrival {
       font-weight: 600;
     }
   </style>
+  <script src='./bus-arrivals.js'></script>
 </head>
 <body>
+  <header>
+  </header>
+  <section id='mem'></section>
+  <section id='lines'></section>
   <script>
-    function createStructureIn($parent) {
-      let $left=document.createElement('div');
-      $left.className='left';
-      $parent.appendChild($left);
-      let $icon=document.createElement('img');
-      $icon.className='icon';
-      $left.appendChild($icon);
-
-      let $right=document.createElement('div');
-      $right.className='right';
-      $parent.appendChild($right);
-      let $header=document.createElement('header');
-      $right.appendChild($header);
-      let $section=document.createElement('section');
-      $right.appendChild($section);
-
-      return {$left:$left, $icon:$icon, $right:$right, $header:$header, $section:$section};
-    }
-    function emptyStructureIn($section) {
-        if ($section.children.length>0) {
-          $section.children[0].remove();
-          return false;
-        } else {
-          return true;
-        }
-    }
-
-    function getLines() {      
-      fetch('http://localhost:5000/api/buses?act=webGetLines')
-      .then(res=> res.json())
-      .then(lines=> {
-        let $ul=document.createElement('ul');
-        document.body.appendChild($ul);
-        lines.map(line=> {
-          let $li=document.createElement('li');
-          $ul.appendChild($li);
-          $li.className='line';
-          let stru=createStructureIn($li);
-          stru.$icon.src=(line['LineID'].length<3 && parseInt(line['LineID'])!==NaN)?'./icons/bus-yellow.png':'./icons/bus-blue.png';
-          stru.$header.textContent=`${line['LineID']}: ${line['LineDescr']} (${line['LineCode']})`;
-
-          $li.dataset.LineID=line['LineID'];
-          $li.dataset.LineCode=line['LineCode'];
-          $li.addEventListener("click", e=> {
-            e.stopPropagation();
-            //alert(e.currentTarget.tagName);
-            webGetRoutes(e.currentTarget);
-          });
-        });
-      })
-      .catch(err=> alert(err.message));
-    }
-
-    function webGetRoutes($parent) {
-      let $section=$parent.querySelector('section');
-      if (emptyStructureIn($section)) {    
-        fetch(`http://localhost:5000/api/buses?act=webGetRoutes&p1=${$parent.dataset.LineCode}`)
-        .then(res=> res.json())
-        .then(routes=> {
-          let $ul=document.createElement('ul');
-          $section.appendChild($ul);
-          let stru;
-          routes.map(route=> {
-            let $li=document.createElement('li');
-            $ul.appendChild($li);
-            $li.className='route';
-            stru=createStructureIn($li);
-            stru.$icon.src='./icons/routes.png';
-            stru.$header.textContent=`${$parent.dataset.LineID}: ${route['RouteDescr']} (${route['RouteCode']})`;
-
-            $li.dataset.RouteCode=route['RouteCode'];
-            $li.addEventListener("click", e=> {
-              e.stopPropagation();
-              webGetStops(e.currentTarget);
-            });
-          });
-
-          if ($ul.children.length==1)
-            webGetStops($ul.children[0]);
-
-        })
-        .catch(err=> alert(err.message));
-      }
-    }
-
-    function webGetStops($parent) {
-      let $section=$parent.querySelector('section');
-      if (emptyStructureIn($section)) { 
-
-        fetch(`http://localhost:5000/api/buses?act=webGetStops&p1=${$parent.dataset.RouteCode}`)
-        .then(res=> res.json())
-        .then(stops=> {
-          let $ul=document.createElement('ul');
-          $section.appendChild($ul);
-          stops.map(stop=> {
-            let $li=document.createElement('li');
-            $ul.appendChild($li);
-            $li.className='stop';
-            stru=createStructureIn($li);
-            stru.$icon.src='./icons/stop-red.png';
-            stru.$header.textContent=`${stop['StopDescr']} (${stop['StopCode']})`;
-
-            $li.dataset.StopCode=stop['StopCode'];
-            $li.addEventListener("click", e=> {
-              e.stopPropagation();
-              getStopArrivals(e.currentTarget);
-            });
-          });
-        })
-        .catch(err=> alert(err.message));
-      }
-    }
-
-    function getStopArrivals($parent) {
-      let $section=$parent.querySelector('section');
-      if (emptyStructureIn($section)) { 
-        getStopArrivals2($parent, $section);
-      }
-    }
-
-    function getStopArrivals2($parent, $section) { 
-      fetch(`http://localhost:5000/api/buses?act=getStopArrivals&p1=${$parent.dataset.StopCode}`)
-      .then(res=> res.json())
-      .then(arrivals=> {
-        let $ul=document.createElement('ul');
-        $section.appendChild($ul);
-        if (arrivals) {
-          fetch(`http://localhost:5000/api/buses?act=webRoutesForStop&p1=${$parent.dataset.StopCode}`)
-          .then(res=> res.json())
-          .then(routes=> {
-            arrivals.map(arrival=> {
-              let $li=document.createElement('li');
-              $ul.appendChild($li);
-              $li.className='arrival';
-              let route=routes.filter(x=> x['RouteCode']===arrival['route_code']);
-              let LineID=route[0]['LineID'];
-              let RouteDescr=route[0]['RouteDescr'];
-              $li.textContent=`${LineID}: ${RouteDescr}: ${arrival['btime2']}'`;
-            });
-          });
-        } else {
-          let $li=document.createElement('li');
-          $ul.appendChild($li);
-          $li.className='arrival';
-          $li.textContent=`(no arrivals)`;
-        }
-      })
-      .catch(err=> alert(err.message));
-    }
-
-    document.addEventListener("DOMContentLoaded", getLines);
+    document.addEventListener("DOMContentLoaded", ()=> {
+      let bus=new BusArrivals(document.body.querySelector('section#lines'));
+      bus.getLines();
+    });
   </script>
+  <footer>
+    <p class="menu">
+      <a href='#0'>0</a>
+      <a href='#1'>1</a>
+      <a href='#2'>2</a>
+      <a href='#3'>3</a>
+      <a href='#4'>4</a>
+      <a href='#5'>5</a>
+      <a href='#6'>6</a>
+      <a href='#7'>7</a>
+      <a href='#8'>8</a>
+      <a href='#9'>9</a>
+      <a href='#Α'>A</a>
+      <a href='#M'>M</a>
+    </p>
+    <p class="info">
+        <h1>Bus arrivals</h1>, Athens 2019, Giannis Clipper, powered by <a href="http://telematics.oasa.gr">telematics.oasa.gr</a>
+    </p>
+  </footer>  
 </body>
 </html>
