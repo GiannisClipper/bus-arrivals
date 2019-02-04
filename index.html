@@ -1,117 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>test_oasa_api</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      white-space:nowrap;
-    }
-
-    body {
-      font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-      font-size: 0.85em;
-      color: darkred;
-    }
-    body > footer {
-      position: -webkit-sticky; /* Safari */
-      position: sticky;
-      bottom: 0;
-      background: yellowgreen;
-      margin-top: 1px;
-      padding: 1.25em 0 1.25em 0;
-      font-size:1em;
-      font-weight:300;
-      text-align: center;
-    }
-
-    body > footer > .info {
-      padding: .75em 0 0 0;
-      font-size: .9em;
-    }
-
-    h1 {
-      display: inline;
-      font-size: 1em;
-    }
-
-    a {
-      text-decoration:none;
-    }
-    a:link, a:visited {
-      color:darkred;
-    }
-    body footer .menu a {
-      border:1px solid darkred;
-      border-radius:50%;
-      padding:.2em .5em .2em .5em;
-      margin:0.2em;
-    }
-
-    ul {
-      list-style-type: none;
-    }
-    li {
-      background: lightsteelblue;
-      margin-top: 1px;
-      margin-bottom: 1px;
-      padding: .25em 0 .25em 0;
-    }
-
-    .left {
-      display: inline-block;
-      vertical-align: top;
-
-    }
-    .right {
-      display: inline-block;
-      vertical-align: top;
-      padding: 1.5em 0 0 0;
-    }
-
-    .line ul, .route ul, .stop ul {
-      padding: 1em 0 1em 0;
-    }
-
-    li {
-      cursor: pointer;
-    }
-
-    .route .right, .stop .right {
-      padding: .75em 0 0 0;
-    }
-
-    .line .icon {
-      width:64px;
-      height:58px;
-    }
-
-    .route .icon, .stop .icon {
-      width:32px;
-      height:29px;
-    }
-
-    .arrival {
-      font-weight: 600;
-    }
-  </style>
+  <title>Bus Arrivals</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
   <script src='./bus-arrivals.js'></script>
 </head>
+
 <body>
   <header>
   </header>
-  <section id='mem'></section>
-  <section id='lines'></section>
-  <script>
-    document.addEventListener("DOMContentLoaded", ()=> {
-      let bus=new BusArrivals(document.body.querySelector('section#lines'));
-      bus.getLines();
-    });
-  </script>
+
+  <section id='data'>
+    <ul></ul>
+  </section>
+
+  <section id='mem'>
+      <ul></ul>
+  </section>  
+  
   <footer>
     <p class="menu">
       <a href='#0'>0</a>
@@ -125,11 +32,19 @@
       <a href='#8'>8</a>
       <a href='#9'>9</a>
       <a href='#Α'>A</a>
-      <a href='#M'>M</a>
+      <a href='#mem'>M</a>
     </p>
     <p class="info">
-        <h1>Bus arrivals</h1>, Athens 2019, Giannis Clipper, powered by <a href="http://telematics.oasa.gr">telematics.oasa.gr</a>
+        <h1>Bus arrivals</h1>, Athens 2019, Giannis Clipper, powered by <a href="http://telematics.oasa.gr" target="_blank">telematics.oasa.gr</a>
     </p>
-  </footer>  
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", ()=> {
+      let bus=new BusArrivals(document.body.querySelector('section#data'), document.body.querySelector('section#mem'));
+      bus.getLines();
+      bus.restoreMem();
+    });
+  </script>
 </body>
 </html>

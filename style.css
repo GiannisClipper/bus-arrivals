@@ -1,0 +1,104 @@
+/* general */
+
+* {
+  margin: 0;
+  padding: 0;
+  white-space:nowrap;
+}
+
+body {
+  background: yellowgreen;
+  font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 0.85em;
+  color: darkred;
+}
+
+h1 {
+  display: inline;
+  font-size: 1em;
+}
+
+a {
+  text-decoration:none;
+}
+
+a:link, a:visited {
+  color:darkred;
+}
+
+ul {
+  list-style-type: none;
+}
+
+li {
+  background: lightsteelblue;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding: .25em 0 .25em 0;
+  cursor: pointer;
+}
+
+/* footer (menu & info) */
+
+body > footer {
+  position:-webkit-sticky; /* Safari */
+  position:sticky;
+  bottom:0;
+  background: yellowgreen;
+  margin-top:1px;
+  padding:1.25em 0 1.25em 0;
+  font-size:1em;
+  font-weight:300;
+  text-align:center;
+}
+
+body > footer > .menu > a {
+  border:1px solid darkred;
+  border-radius:50%;
+  padding:.2em .5em .2em .5em;
+  margin:0.2em;
+}
+
+body > footer > .info {
+  padding: .75em 0 0 0;
+  font-size: .9em;
+}
+
+/* structure in section */
+
+.left {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.right {
+  display: inline-block;
+  vertical-align: top;
+  padding: 1.5em 0 0 0;
+}
+
+.line > .left > .icon,
+.mem > .left > .icon {
+  width:64px;
+  height:58px;
+}
+
+.route > .left > .icon, 
+.stop > .left > .icon {
+  width:32px;
+  height:29px;
+}
+
+.route > .right, .stop > .right {
+  padding: .75em 0 0 0;
+}
+
+.line > .right > section > ul, 
+.route > .right > section > ul, 
+.stop > .right > section > ul {
+  padding: 1em 0 1em 0;
+}
+
+.arrival {
+  font-weight: 600;
+}
