@@ -1,4 +1,4 @@
-This web app is based on oasa.telematics API and is developed for demo and educational purposes.
+This web app is based on telematics.oasa.gr API and is developed for demo and educational purposes.
 
 In the beginning, app displays a main list with all bus lines in Athens ordered by lineID. Clicking on a bus line is displayed a list with it's routes (usually 2 routes: go & return), clicking a route is displayed a list with the bus stops in route and finally clicking a stop are displayed bus arrivals expected there. Clicking a selection again, the corresponded list get closed.
 
