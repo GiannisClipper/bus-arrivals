@@ -5,18 +5,18 @@ class BusArrivals {
       this.origin='https://gc-info.herokuapp.com';
       this.$data=$data;
       this.$mem=$mem;
+      this.memLength=6;
     }
 
   createStructureIn($parent) {
       /*
-      when user click on <li> items, requests bus lines, routes, stops,
-      code creates the following structure inside <li> and fill it with requested data
-      if structure already exists, code deletes it hidding data shown previously 
+      code creates the following structure inside each <li> tag
+      to handle the data of each record (line, route or stop)
       +---------------+ +------------------------------+
       | div.left      | | div.right                    |
       |               | |                              |
       | +-----------+ | | +--------------------------+ |
-      | | img.icon  | | | | div.title                | |
+      | | img.icon  | | | | div.descr                | |
       | +-----------+ | | +--------------------------+ |
       |               | | +--------------------------+ |
       |               | | | ul                       | |
@@ -34,35 +34,42 @@ class BusArrivals {
       let $right=document.createElement('div');
       $right.className='right';
       $parent.appendChild($right);
-      let $title=document.createElement('div');
-      $title.className='title';
-      $right.appendChild($title);
+      let $descr=document.createElement('div');
+      $descr.className='descr';
+      $right.appendChild($descr);
       let $ul=document.createElement('ul');
       $right.appendChild($ul);
 
-      return {$left:$left, $icon:$icon, $right:$right, $title:$title, $ul:$ul};
+      return {$left:$left, $icon:$icon, $right:$right, $descr:$descr, $ul:$ul};
     }
 
-  isEmptyStructureIn($ul) {
-    return ($ul.children.length>0)?false:true;
+  removeStructureFrom($ul) {
+    if ($ul.children.length>0) {
+      let uls=$ul.parentElement.querySelectorAll('ul');
+      //first clear any possible intervals
+      uls.forEach(x=> {if (x.interval) clearInterval(x.interval);});
+      //then clear list items
+      for (let i=$ul.children.length-1; i>=0; i--) $ul.children[i].remove();
+      return true;
+    } else {
+      return false;
+    }
   }
 
-  removeStructureIn($ul) {
-    let uls=$ul.parentElement.querySelectorAll('ul');
-    //first clear any possible intervals
-    uls.forEach(x=> {if (x.interval) clearInterval(x.interval);});
-
-    //then clear list items
-    for (let i=$ul.children.length-1; i>=0; i--)
-      $ul.children[i].remove();
-  }
-
-  getLines() {      
-    fetch(`${this.origin}/api/buses?act=webGetLines`)
+  getData($parent, url, callback) {
+    $parent.style.cursor='wait';
+    fetch(url)
     .then(res=> res.json())
-    .then(lines=> {
+    .then(data=> callback(data))
+    .catch(err=> alert(err.message))
+    .finally(()=> $parent.style.cursor='pointer');
+  }
+
+  getLines() {
+    let url=`${this.origin}/api/buses?act=webGetLines`;
+    let callback=lines=> {
       let $ul=this.$data.querySelector('ul');
-      let id='';
+      let id='';  
       lines.map(line=> {
         let $li=document.createElement('li');
         $ul.appendChild($li);
@@ -77,70 +84,58 @@ class BusArrivals {
         let stru=this.createStructureIn($li);
         //yellow icon for trolley and blue for all other buses
         stru.$icon.src=(line['LineID'].length<3 && parseInt(line['LineID'][0]))?'./icons/bus-yellow.png':'./icons/bus-blue.png';
-        stru.$title.textContent=`${line['LineID']}: ${line['LineDescr']}`; //(${line['LineCode']})`;
+        stru.$descr.textContent=`${line['LineID']}: ${line['LineDescr']}`; //(${line['LineCode']})`;
 
         $li.dataset.LineID=line['LineID'];
         $li.dataset.LineCode=line['LineCode'];
         $li.addEventListener("click", e=> {
           e.stopPropagation();
-          this.webGetRoutes(e.currentTarget);
+          this.getRoutes(e.currentTarget);
         });
       });
-    })
-    .catch(err=> alert(err.message));
+    }
+    this.getData(document.body, url, callback);
   }
 
-  webGetRoutes($parent) {
+  getRoutes($parent) {
     let $ul=$parent.querySelector('ul');
-    if (!this.isEmptyStructureIn($ul)) {
-      this.removeStructureIn($ul)
-
-    } else {
-      $parent.style.cursor='wait';
-      fetch(`${this.origin}/api/buses?act=webGetRoutes&p1=${$parent.dataset.LineCode}`)
-      .then(res=> res.json())
-      .then(routes=> {
+    if (!this.removeStructureFrom($ul)) {
+      let url=`${this.origin}/api/buses?act=webGetRoutes&p1=${$parent.dataset.LineCode}`;
+      let callback=routes=> {
         routes.map(route=> {
           let $li=document.createElement('li');
           $ul.appendChild($li);
           $li.className='route';
           let stru=this.createStructureIn($li);
           stru.$icon.src='./icons/routes.png';
-          stru.$title.textContent=`${$parent.dataset.LineID}: ${route['RouteDescr']}`; //(${route['RouteCode']})`;
+          stru.$descr.textContent=`${$parent.dataset.LineID}: ${route['RouteDescr']}`; //(${route['RouteCode']})`;
 
           $li.dataset.RouteCode=route['RouteCode'];
           $li.addEventListener("click", e=> {
             e.stopPropagation();
-            this.webGetStops(e.currentTarget);
+            this.getStops(e.currentTarget);
           });
         });
-
+        //if exists only one route get stops automatically
         if ($ul.children.length==1)
-          this.webGetStops($ul.children[0]);
-
-      })
-      .catch(err=> alert(err.message))
-      .finally(()=> $parent.style.cursor='default');
+          this.getStops($ul.children[0]);
+      }
+      this.getData($parent, url, callback);
     }
   }
 
-  webGetStops($parent) {
+  getStops($parent) {
     let $ul=$parent.querySelector('ul');
-    if (!this.isEmptyStructureIn($ul)) {
-      this.removeStructureIn($ul)
-
-    } else {
-      $parent.style.cursor='wait';
-      fetch(`${this.origin}/api/buses?act=webGetStops&p1=${$parent.dataset.RouteCode}`)
-      .then(res=> res.json())
-      .then(stops=> {
+    if (!this.removeStructureFrom($ul)) {
+      let url=`${this.origin}/api/buses?act=webGetStops&p1=${$parent.dataset.RouteCode}`;
+      let callback=stops=> {
         stops.map(stop=> {
           let $li=document.createElement('li');
           $ul.appendChild($li);
           $li.className='stop';
           let stru=this.createStructureIn($li);
-          stru.$icon.src='./icons/stop-red.png';
-          stru.$title.textContent=`${stop['StopDescr']}`; //(${stop['StopCode']})`;
+          stru.$icon.src='./icons/stop-pink.png';
+          stru.$descr.textContent=`${stop['StopDescr']}`; //(${stop['StopCode']})`;
 
           $li.dataset.StopCode=stop['StopCode'];
           $li.addEventListener("click", e=> {
@@ -148,20 +143,27 @@ class BusArrivals {
             this.getStopArrivals(e.currentTarget);
           });
         });
-      })
-      .catch(err=> alert(err.message))
-      .finally(()=> $parent.style.cursor='default');
+      }
+      this.getData($parent, url, callback);
     }
   }
 
   getStopArrivals($parent) {
     let $ul=$parent.querySelector('ul');
-    if (!this.isEmptyStructureIn($ul)) {
-      this.removeStructureIn($ul)
-    } else {
+    if (!this.removeStructureFrom($ul)) {
       this.getStopArrivalsUpdate($parent, $ul);
-      if ($parent.className!=='mem')
-        this.setInMem($parent.dataset.StopCode, 'title of'+$parent.dataset.StopCode); 
+      
+      //save in mem
+      let StopCode=$parent.dataset.StopCode;
+      if ($parent.className!=='mem' && !this.findInMem(StopCode)) {
+        let descr=`${$parent.querySelector('.descr').textContent}
+          (${$parent.parentElement.parentElement.parentElement.parentElement.parentElement.querySelector('.descr').textContent})`;
+          //li.stop < ul < div.right < li.route < ul < div.right        
+        this.setInMem(StopCode, descr);
+        this.saveMem();
+      }
+
+      //init interval refresh
       $ul.interval=setInterval(()=>{
         console.log('interval getStopArrivals', Date(Date.now()));
         this.getStopArrivalsUpdate($parent, $ul);
@@ -170,40 +172,39 @@ class BusArrivals {
   }
 
   getStopArrivalsUpdate($parent, $ul) {
-    $parent.style.cursor='wait';
-    fetch(`${this.origin}/api/buses?act=getStopArrivals&p1=${$parent.dataset.StopCode}`)
-    .then(res=> res.json())
-    .then(arrivals=> {
-
+    let url=`${this.origin}/api/buses?act=getStopArrivals&p1=${$parent.dataset.StopCode}`;
+    let callback=arrivals=> {
       let counter=-1;
       if (arrivals) {
         fetch(`${this.origin}/api/buses?act=webRoutesForStop&p1=${$parent.dataset.StopCode}`)
         .then(res=> res.json())
         .then(routes=> {
-
           arrivals.map(arrival=> {
-            let $li=this.getNextLi($ul, ++counter);
+            let $li=this.refreshArrivalsList($ul, ++counter);
             let route=routes.filter(x=> x['RouteCode']===arrival['route_code']);
             let LineID=route[0]['LineID'];
             let RouteDescr=route[0]['RouteDescr'];
             $li.textContent=`${LineID}: ${RouteDescr}: ${arrival['btime2']}'`;
           });
 
-          //after arrivals refresh delete any <li> tags no more needed
+          //delete any <li> tags no more needed after arrivals refresh 
           for (let i=$ul.children.length-1; i>counter; i--)
             $ul.children[i].remove();
         });
       } else {
-        let $li=this.getNextLi($ul, ++counter);
+        let $li=this.refreshArrivalsList($ul, ++counter);
         $li.textContent=`(no arrivals)`;
+
+        //delete any <li> tags no more needed after arrivals refresh 
+        for (let i=$ul.children.length-1; i>counter; i--)
+          $ul.children[i].remove();
       }
-    })
-    .catch(err=> alert(err.message))
-    .finally(()=> $parent.style.cursor='default');
+    }
+    this.getData($parent, url, callback);
 }
 
-  //on arrivals refresh replace existing <li> tags or add new if needed
-  getNextLi($ul, counter) {
+  refreshArrivalsList($ul, counter) {   
+    //replace existing <li> tags or add new if needed on arrivals refresh
     let $li;
     if (counter<=$ul.children.length-1) {
       $li=$ul.children[counter];
@@ -215,43 +216,44 @@ class BusArrivals {
     return $li;
   }
 
-  setInMem(StopCode, title) {
+  setInMem(StopCode, descr) { //put a selected stop in mem list
     let $ul=this.$mem.querySelector('ul');
     let $li=document.createElement('li');
     $ul.insertBefore($li, $ul.childNodes[0]);
     $li.className='mem';
 
     let stru=this.createStructureIn($li);
-    stru.$icon.src='./icons/stop-red.png';
-    stru.$title.textContent=title;
-
+    stru.$icon.src='./icons/stop-pink.png';
+    stru.$descr.textContent=descr;
     $li.dataset.StopCode=StopCode;
     $li.addEventListener("click", e=> {
       e.stopPropagation();
       this.getStopArrivals(e.currentTarget);
     });
 
-    for (let i=$ul.children.length-1; i>3; i--) {
-      //in case exist any possible intervals
+    for (let i=$ul.children.length-1; i>this.memLength-1; i--) {
+      //first remove any possible intervals
       let $sub_ul=$ul.children[i].querySelector('ul');
-      if (!this.isEmptyStructureIn($sub_ul))
-        this.removeStructureIn($sub_ul)  
+      this.removeStructureFrom($sub_ul);
       $ul.children[i].remove();
     }
-    this.saveMem();
   }
 
-  saveMem() {
+  findInMem(StopCode) { //find if a stopcode already exists in mem list
+    let mem=JSON.parse(localStorage.getItem('mem'));
+    return mem?(mem.find(x=> x.StopCode===StopCode)?true:false):false;
+  }
+
+  saveMem() { //save mem list in localstorage
     let $ul=this.$mem.querySelector('ul');
     let mem=[];
     for (let i=0; i<=$ul.children.length-1; i++)
-      mem.push({StopCode:$ul.children[i].dataset.StopCode, title:$ul.children[i].querySelector('.title').textContent});
-    localStorage.setItem("mem", JSON.stringify(mem));
+      mem.push({StopCode:$ul.children[i].dataset.StopCode, descr:$ul.children[i].querySelector('.descr').textContent});
+    localStorage.setItem("mem", JSON.stringify(mem.reverse()));
   }
 
-  restoreMem() {
+  restoreMem() { //restore mem list from localstorage
     let mem=JSON.parse(localStorage.getItem('mem'));
-    if (mem)
-      mem.forEach(x=> this.setInMem(x.StopCode, x.title));
+    if (mem) mem.forEach(x=> this.setInMem(x.StopCode, x.descr));
   }
 }
