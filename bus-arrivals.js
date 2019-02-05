@@ -16,6 +16,8 @@ class BusArrivals {
         if (x.interval && parseInt(Date.now())-parseInt(x.timestamp)>180000) {
           console.log(parseInt(Date.now())-parseInt(x.timestamp));
           clearInterval(x.interval);
+          x.interval=null;
+          x.timestamp=null;
           for (let i=x.children.length-1; i>=0; i--) 
             x.children[i].remove();
         }
