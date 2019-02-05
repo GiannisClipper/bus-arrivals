@@ -11,7 +11,7 @@ class BusArrivals {
   createStructureIn($parent) {
       /*
       code creates the following structure inside each <li> tag
-      to handle the data of each record (line, route or stop)
+      to organize the data of each record (line, route or stop)
       +---------------+ +------------------------------+
       | div.left      | | div.right                    |
       |               | |                              |
