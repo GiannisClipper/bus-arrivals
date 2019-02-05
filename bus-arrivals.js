@@ -1,47 +1,62 @@
 class BusArrivals {
 
   constructor($data, $mem) {
-      //this.origin='http://localhost:5000';
-      this.origin='https://gc-info.herokuapp.com';
-      this.$data=$data;
-      this.$mem=$mem;
-      this.memLength=6;
-    }
+    //this.origin='http://localhost:5000';
+    this.origin='https://gc-info.herokuapp.com';
+    this.$data=$data;
+    this.$mem=$mem;
+    this.memLength=6;
+
+    //hides bus Arrivals lists and stops auto refresh after 3-4 minutes 
+    //in order to control forgotten bus Arrivals lists and infinity requests.
+    this.refreshControl=setInterval(()=> {
+      console.log('interval refreshControl');
+      let uls=document.body.querySelectorAll('.stop ul, #mem ul li ul');
+      uls.forEach(x=> {
+        if (x.interval && parseInt(Date.now())-parseInt(x.timestamp)>180000) {
+          console.log(parseInt(Date.now())-parseInt(x.timestamp));
+          clearInterval(x.interval);
+          for (let i=x.children.length-1; i>=0; i--) 
+            x.children[i].remove();
+        }
+      });
+    }, 60000);
+  }
 
   createStructureIn($parent) {
-      /*
-      code creates the following structure inside each <li> tag
-      to organize the data of each record (line, route or stop)
-      +---------------+ +------------------------------+
-      | div.left      | | div.right                    |
-      |               | |                              |
-      | +-----------+ | | +--------------------------+ |
-      | | img.icon  | | | | div.descr                | |
-      | +-----------+ | | +--------------------------+ |
-      |               | | +--------------------------+ |
-      |               | | | ul                       | |
-      |               | | |                          | |
-      |               | | +--------------------------+ |
-      +---------------+ +------------------------------+
-      */
-      let $left=document.createElement('div');
-      $left.className='left';
-      $parent.appendChild($left);
-      let $icon=document.createElement('img');
-      $icon.className='icon';
-      $left.appendChild($icon);
+    /*
+    code creates the following structure inside each <li> tag
+    to organize the data of each record (line, route or stop)
+    +---------------+ +------------------------------+
+    | div.left      | | div.right                    |
+    |               | |                              |
+    | +-----------+ | | +--------------------------+ |
+    | | img.icon  | | | | div.descr                | |
+    | +-----------+ | | +--------------------------+ |
+    |               | | +--------------------------+ |
+    |               | | | ul                       | |
+    |               | | |                          | |
+    |               | | +--------------------------+ |
+    +---------------+ +------------------------------+
+    */
+    let $left=document.createElement('div');
+    $left.className='left';
+    $parent.appendChild($left);
+    let $icon=document.createElement('img');
+    $icon.className='icon';
+    $left.appendChild($icon);
 
-      let $right=document.createElement('div');
-      $right.className='right';
-      $parent.appendChild($right);
-      let $descr=document.createElement('div');
-      $descr.className='descr';
-      $right.appendChild($descr);
-      let $ul=document.createElement('ul');
-      $right.appendChild($ul);
+    let $right=document.createElement('div');
+    $right.className='right';
+    $parent.appendChild($right);
+    let $descr=document.createElement('div');
+    $descr.className='descr';
+    $right.appendChild($descr);
+    let $ul=document.createElement('ul');
+    $right.appendChild($ul);
 
-      return {$left:$left, $icon:$icon, $right:$right, $descr:$descr, $ul:$ul};
-    }
+    return {$left:$left, $icon:$icon, $right:$right, $descr:$descr, $ul:$ul};
+  }
 
   removeStructureFrom($ul) {
     if ($ul.children.length>0) {
@@ -164,6 +179,7 @@ class BusArrivals {
       }
 
       //init interval refresh
+      $ul.timestamp=Date.now();
       $ul.interval=setInterval(()=>{
         console.log('interval getStopArrivals', Date(Date.now()));
         this.getStopArrivalsUpdate($parent, $ul);
