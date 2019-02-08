@@ -15,9 +15,7 @@ class BusArrivals {
       uls.forEach(x=> {
         if (x.interval && parseInt(Date.now())-parseInt(x.timestamp)>180000) {
           console.log(parseInt(Date.now())-parseInt(x.timestamp));
-          clearInterval(x.interval);
-          x.interval=null;
-          x.timestamp=null;
+          this.removeRefresh(x);
           for (let i=x.children.length-1; i>=0; i--) 
             x.children[i].remove();
         }
@@ -64,18 +62,20 @@ class BusArrivals {
     if ($ul.children.length>0) {
       let uls=$ul.parentElement.querySelectorAll('ul');
       //first clear any possible intervals
-      uls.forEach(x=> {
-        if (x.interval) {
-          clearInterval(x.interval);
-          console.log('interval remove');
-        }
-      });
+      uls.forEach(x=> {if (x.interval) this.removeRefresh(x);});
       //then clear list items
       for (let i=$ul.children.length-1; i>=0; i--) $ul.children[i].remove();
       return true;
     } else {
       return false;
     }
+  }
+
+  removeRefresh($ul) {
+    clearInterval($ul.interval);
+    console.log('interval remove');
+    $ul.interval=null;
+    $ul.timestamp=null;
   }
 
   getData($parent, url, callback) {
