@@ -64,7 +64,12 @@ class BusArrivals {
     if ($ul.children.length>0) {
       let uls=$ul.parentElement.querySelectorAll('ul');
       //first clear any possible intervals
-      uls.forEach(x=> {if (x.interval) clearInterval(x.interval);});
+      uls.forEach(x=> {
+        if (x.interval) {
+          clearInterval(x.interval);
+          console.log('interval remove');
+        }
+      });
       //then clear list items
       for (let i=$ul.children.length-1; i>=0; i--) $ul.children[i].remove();
       return true;
@@ -83,9 +88,19 @@ class BusArrivals {
   }
 
   getLines() {
+    //temporary icon and message at the beginning when connecting, requesting and downloading
+    let $ul=this.$data.querySelector('ul');
+    this.removeStructureFrom($ul);
+    let $li=document.createElement('li');
+    $ul.appendChild($li);
+    $li.className='line';
+    let stru=this.createStructureIn($li);
+    stru.$icon.src='./icons/loading.gif';
+    stru.$descr.textContent='CONNECTING/ REQUESTING/ LOADING...';
+
     let url=`${this.origin}/api/buses?act=webGetLines`;
     let callback=lines=> {
-      let $ul=this.$data.querySelector('ul');
+      this.removeStructureFrom($ul);
       let id='';  
       lines.map(line=> {
         let $li=document.createElement('li');
@@ -241,12 +256,18 @@ class BusArrivals {
     $li.className='mem';
 
     let stru=this.createStructureIn($li);
-    stru.$icon.src='./icons/stop-pink.png';
+    stru.$icon.src='./icons/stop-pink-x.png';
     stru.$descr.textContent=descr;
     $li.dataset.StopCode=StopCode;
     $li.addEventListener("click", e=> {
       e.stopPropagation();
       this.getStopArrivals(e.currentTarget);
+    });
+
+    //removing memory bus stops
+    stru.$icon.addEventListener("click", e=> {
+      e.stopPropagation();
+      this.deleteInMem(e.currentTarget);
     });
 
     for (let i=$ul.children.length-1; i>this.memLength-1; i--) {
@@ -255,6 +276,14 @@ class BusArrivals {
       this.removeStructureFrom($sub_ul);
       $ul.children[i].remove();
     }
+  }
+
+  deleteInMem($img) {
+    let $ul=$img.parentElement.parentElement.querySelector('ul');
+    //img < div.left < li
+    this.removeStructureFrom($ul);
+    $img.parentElement.parentElement.remove();
+    this.saveMem();
   }
 
   findInMem(StopCode) { //find if a stopcode already exists in mem list
